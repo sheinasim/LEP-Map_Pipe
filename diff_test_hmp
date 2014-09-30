@@ -1,0 +1,4 @@
+#!/bin/bash
+
+./Lep-RD4.py 8_tr_123_test.hmp > temp_hmp
+diff temp_hmp test_hmp.expected
