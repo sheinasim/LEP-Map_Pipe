@@ -38,16 +38,35 @@ def impossible_genotypes(offspring_genotype, mom_genotype, dad_genotype):
 	return False
 #get individual info 
 def get_ind_info(columns):
-    indID = columns[0] #looks like 8_3_2_2F or B8_3_2_2_10M
-    indfields = indID.split("_")
-    genotypes = columns[1:]
-    if indfields[3].startswith("2"):
-        group = 2
-    elif indfields[3].startswith("1"):
-        group = 1
+    ind = columns[0] #looks like 8_3_2_2F or B8_3_2_2_10M
+    individual = {}
+    individual["ID"] = ind
+    ind_info = ind.strip().split("_")
+    if ind_info[3].startswith("1"):
+        individual["group"] = 1
+    elif ind_info[3].startswith("2"):
+        individual["group"] = 2
     else:
-        group = 5
-    return indfields, indID, group, genotypes
+        individual["group"] = 5
+    if ind[0].startswith("8"):
+        individual["mother"] = 0
+        individual["father"] = 0
+    else:
+        individual["mother"] = "8" + "_" + ind_info[1] + "_" + ind_info[2] + "_" + ind_info[3] + "F"
+        individual["father"] = "8" + "_" + ind_info[1] + "_" + ind_info[2] + "_" + ind_info[3] + "M"
+    if ind_info[-1].endswith("F"):
+        individual["sex"] = 1
+    else:
+        individual["sex"] = 2
+    if ind_info[0].startswith("W"):
+        individual["affected"] = 2
+    else:
+        individual["affected"] = 1
+    if individual["mother"] == 0 and individual["father"] == 0:
+        individual["isoffspring"] = False
+    else:
+        individual["isoffspring"] = True
+    return individual 
 
 # open file
 with open(sys.argv[1]) as inputfile:
@@ -62,34 +81,22 @@ with open(sys.argv[1]) as inputfile:
             #this is the second line
             alleles = line.strip().split()[1:]
         else:
-	    isoffspring = True
             columns = line.split()
-            indfields, indID, group, genotypes = get_ind_info(columns)
-            if indID.startswith("8"):
-		isoffspring = False
-                father = 0
-                mother = 0
-		if indID.endswith("F"):
-		    mom_genotypes = genotypes
-		elif indID.endswith("M"):
-		    dad_genotypes = genotypes
-		else:
-		    print "error"
-            else:
-                father = "8"+"_"+indfields[1]+"_"+indfields[2]+"_"+indfields[3]+"M"
-                mother = "8"+"_"+indfields[1]+"_"+indfields[2]+"_"+indfields[3]+"F"
-            if indfields[0].startswith("B"):
-                affected = 1
-            elif indfields[0].startswith("W"):
-                affected = 2
-            else:
-                affected = 1
-            if indID.endswith("M"):
-                sex = 2
-            else:
-                sex = 1
-            locusgenotype = [] 
-            newline = str(group) + "\t" + str(indID) + "\t" + str(mother) + "\t" + str(father) + "\t" + str(sex) + "\t" + str(affected) + "\t"
+            genotypes = columns[1:]
+            individual_info = get_ind_info(columns)
+            group = individual_info['group']
+            ID = individual_info['ID']
+            mother = individual_info['mother']
+            if individual_info['isoffspring'] == False and individual_info['sex'] == 1:
+                mom_genotypes = genotypes
+            elif individual_info['isoffspring'] == False and individual_info['sex'] == 2:
+                dad_genotypes = genotypes
+            father = individual_info['father']
+            sex = individual_info['sex']
+            affected = individual_info['affected']
+            isoffspring = individual_info['isoffspring']
+            locusgenotype = []
+            newline = str(group) + "\t" + str(ID) + "\t" + str(mother) + "\t" + str(father) + "\t" + str(sex) + "\t" + str(affected) + "\t"
             for i, genotype in enumerate(genotypes):
                 current_allele = alleles[i]
 		if isoffspring:
